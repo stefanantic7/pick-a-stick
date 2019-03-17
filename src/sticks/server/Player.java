@@ -88,6 +88,5 @@ public class Player {
     }
     public static void main(String[] args) {
         new Player((long)(Math.random() * 1000));
-
     }
 }

@@ -125,9 +125,11 @@ public class PlayerThread extends Thread{
                     //promesaj stapice,
                     Random r = new Random();
                     int selectWrong = r.nextInt(Croupier.MAX_PLAYER_COUNT);
+                    System.out.println("Los je: "+selectWrong);
                     for(int i=0;i<this.croupier.getSticks().length();i++) {
                         if(i==selectWrong) {
                             this.croupier.getSticks().set(i, new Stick(false));
+                            continue;
                         }
                         this.croupier.getSticks().set(i, new Stick(true));
                     }

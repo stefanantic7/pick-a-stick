@@ -15,10 +15,15 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+//Fiksuj ovo sa stapicima, nakon izvlacenja, gubi se stapic
+//Napravi klasu ActivePlayer gde ces da cuvas sve o tom igracu
+//shodno tome, apdejtuj PlayerUtils
+//Daj mu po logu da znamo ko je kakav stapic izvukao
+//zavrsi igru kad se sve zavrsi (pobi sve)
 public class Croupier {
     public static final int TCP_PORT = 9000;
     public static final int MAX_PLAYER_COUNT = 3;
-    public static int rounds = 10;
+    public static int rounds = 15;
     public static final AtomicInteger round_counter = new AtomicInteger(0);
 
     private AtomicInteger currentPlayerIndex = new AtomicInteger(0);
@@ -143,10 +148,12 @@ public class Croupier {
     private void shuffleSticks() {
         //promesaj stapice,
         Random r = new Random();
-        int selectWrong = r.nextInt(6);
+        int selectWrong = r.nextInt(MAX_PLAYER_COUNT);
+        System.out.println("Los je: "+selectWrong);
         for(int i=0;i<getSticks().length();i++) {
             if(i==selectWrong) {
                 getSticks().set(i, new Stick(false));
+                continue;
             }
             getSticks().set(i, new Stick(true));
         }
