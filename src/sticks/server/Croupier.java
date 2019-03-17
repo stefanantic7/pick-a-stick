@@ -12,8 +12,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Croupier {
     public static final int TCP_PORT = 9000;
-    public static final int MAX_PLAYER_COUNT = 3; // Stapica ima koliko i igraca
-    public static int ROUNDS = 5; // Broj rundi (M)
+    public static final int MAX_PLAYER_COUNT = 6; // Stapica ima koliko i igraca
+    public static int ROUNDS = 9; // Broj rundi (M)
 
     private static Croupier instance = null;
 
