@@ -77,7 +77,7 @@ public class Player {
                     out.println(responseJson.toString());
                     break;
                 case "choose":
-                    responseJson.addProperty("chosen", random.nextInt(Croupier.MAX_PLAYER_COUNT));
+                    responseJson.addProperty("chosen", random.nextInt(requestJson.get("less_then").getAsInt()));
                     out.println(responseJson.toString());
                     break;
                 default:

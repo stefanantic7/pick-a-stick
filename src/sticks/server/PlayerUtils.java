@@ -19,7 +19,7 @@ public class PlayerUtils {
         return table.get(index).getUuid();
     }
 
-    public static int countActivePlayers() {
+    public static synchronized int countActivePlayers() {
         return table.size();
     }
 

@@ -5,7 +5,6 @@ import com.google.gson.JsonParser;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Random;
 import java.util.concurrent.BrokenBarrierException;
 
 public class PlayerThread extends Thread{
@@ -49,13 +48,15 @@ public class PlayerThread extends Thread{
         JsonObject request = new JsonObject();
 
         request.addProperty("action", "choose");
+        request.addProperty("less_then", StickUtils.count());
         out.println(request);
-        System.out.println("[Server]: Requested choice([0<=x<6]) from uuid: "+uuid);
+        System.out.println("[Server]: Requested choice([0<=x<"+StickUtils.count()+"]) from uuid: "+uuid);
         try {
             String response = in.readLine();
             System.out.println("[Client] "+uuid+": "+response);
             JsonObject responseJson = new JsonParser().parse(response).getAsJsonObject();
             this.croupier.getLastChosenStickIndex().set(responseJson.get("chosen").getAsInt());
+            StickUtils.pick(responseJson.get("chosen").getAsInt());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -66,9 +67,9 @@ public class PlayerThread extends Thread{
     public void run() {
         //newParty
 
-        while(Croupier.round_counter.get() < Croupier.rounds) {
+        while(Croupier.round_counter.get() < Croupier.ROUNDS) {
 
-            System.out.println("[Server]: "+uuid+" is ready");
+            System.out.println("[Server]: "+uuid+" has entered in new round");
             //Cekaj da se sve pripremi za ovu partiju
             try {
                 this.croupier.getNewPartyLatch().await();
@@ -111,28 +112,22 @@ public class PlayerThread extends Thread{
 
             //Daj poene onima koji su pogadjali i koji su pogodili
             if(!this.uuid.equals(currentPlayerUuid)
-                    && this.lastSuccessGuess==this.croupier.getSticks().get(this.croupier.getLastChosenStickIndex().get()).isSuccess()) {
+                    && this.lastSuccessGuess==StickUtils.getLastPickedStick().isSuccess()) {
                 int points = PlayerUtils.incrementPointsTo(uuid);
                 System.out.println("[Server]: "+this.uuid+" has "+points+" points");
             }
 
             //Ako je izvukao los
-            if(this.uuid.equals(currentPlayerUuid) && !this.croupier.getSticks().get(this.croupier.getLastChosenStickIndex().get()).isSuccess()) {
+            if(this.uuid.equals(currentPlayerUuid) && !StickUtils.getLastPickedStick().isSuccess()) {
                 System.out.println("[Server]: "+this.uuid+" chose bad stick");
+                if(Croupier.round_counter.get() < Croupier.ROUNDS -1) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
+                    System.out.println("[Server]: New party has started");
+                }
                 //New party
                 this.croupier.resetNewPartyLatch();
                 new Thread(()->{
                     //promesaj stapice,
-                    Random r = new Random();
-                    int selectWrong = r.nextInt(Croupier.MAX_PLAYER_COUNT);
-                    System.out.println("Los je: "+selectWrong);
-                    for(int i=0;i<this.croupier.getSticks().length();i++) {
-                        if(i==selectWrong) {
-                            this.croupier.getSticks().set(i, new Stick(false));
-                            continue;
-                        }
-                        this.croupier.getSticks().set(i, new Stick(true));
-                    }
+                    StickUtils.reset();
 
                     //Opet kreni od prvog
                     this.croupier.getCurrentPlayerIndex().set(0);

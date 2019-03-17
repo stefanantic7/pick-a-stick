@@ -23,12 +23,11 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 //zavrsi igru kad se sve zavrsi (pobi sve)
 public class Croupier {
     public static final int TCP_PORT = 9000;
-    public static final int MAX_PLAYER_COUNT = 3;
-    public static int rounds = 3;
+    public static final int MAX_PLAYER_COUNT = 6;
+    public static int ROUNDS = 9;
     public static final AtomicInteger round_counter = new AtomicInteger(0);
 
     private AtomicInteger currentPlayerIndex = new AtomicInteger(0);
-    private AtomicReferenceArray<Stick> sticks = new AtomicReferenceArray<>(MAX_PLAYER_COUNT);
     private AtomicInteger lastChosenStickIndex = new AtomicInteger(0);
 
     private CyclicBarrier allReadyBarrier;
@@ -44,6 +43,7 @@ public class Croupier {
         this.newPartyLatch = new CountDownLatch(1);
         this.nextRoundBarrier = new CyclicBarrier(MAX_PLAYER_COUNT+1);//+one for another thread
 
+        //Thread for controlling if should go to next round
         new Thread(()-> {
             while(true) {
                 if(this.nextRoundBarrier.getNumberWaiting()==MAX_PLAYER_COUNT) {
@@ -68,7 +68,8 @@ public class Croupier {
             }
         }).start();
 
-        shuffleSticks();
+        StickUtils.reset();
+
         this.getNewPartyLatch().countDown(); //starts new party
 
         System.out.println("[Server]: Croupier is running...");
@@ -141,31 +142,12 @@ public class Croupier {
         return stickChosenLatch;
     }
 
-    public AtomicReferenceArray<Stick> getSticks() {
-        return sticks;
-    }
-
     public AtomicInteger getLastChosenStickIndex() {
         return lastChosenStickIndex;
     }
 
     public static void main(String[] args) {
         new Croupier();
-    }
-
-    private void shuffleSticks() {
-        //promesaj stapice,
-        Random r = new Random();
-        int selectWrong = r.nextInt(MAX_PLAYER_COUNT);
-        System.out.println("Los je: "+selectWrong);
-        for(int i=0;i<getSticks().length();i++) {
-            if(i==selectWrong) {
-                getSticks().set(i, new Stick(false));
-                continue;
-            }
-            getSticks().set(i, new Stick(true));
-        }
-
     }
 
 }
