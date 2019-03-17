@@ -1,17 +1,15 @@
-package sticks.server;
+package sticks.client;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
 
 import java.io.*;
 import java.net.Socket;
 import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.*;
 
 import static sticks.server.Croupier.TCP_PORT;
 
+//Pokrenuti nekoliko instanci klijenta kako bi se sve lepo videlo u zasebnim konzolama
 public class Player {
 
     private long enterAfterMillis = 0;
@@ -37,21 +35,24 @@ public class Player {
         // otvori socket prema drugom racunaru
         Socket socket = new Socket("127.0.0.1", TCP_PORT);
 
-        // inicijalizuj ulazni stream
         this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        // inicijalizuj izlazni stream
         this.out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
 
         String response = in.readLine();
         System.out.println("[Server]: "+response);
 
         JsonObject responseJson = new JsonParser().parse(response).getAsJsonObject();
+        String responseProperty = responseJson.get("connection_status").getAsString();
 
-        if(responseJson.get("connection_status").getAsString().equals("ok")) {
+        if(responseProperty.equals("ok")) {
+            //Ima mesta
             handleRequests();
         }
-        else {
+        else if (responseProperty.equals("bad")) {
             System.out.println("[Client]: Exit...");
+        }
+        else {
+            System.out.println("[Client]: Connection status is not supported. Exit...");
         }
 
         in.close();
@@ -61,6 +62,7 @@ public class Player {
     }
 
     public void handleRequests() throws IOException {
+        Random random = new Random();
 
         while(true) {
             String request = this.in.readLine();
@@ -69,15 +71,13 @@ public class Player {
             JsonObject requestJson = new JsonParser().parse(request).getAsJsonObject();
             JsonObject responseJson = new JsonObject();
 
-            Random random = new Random();
-
             switch (requestJson.get("action").getAsString()) {
                 case "guess":
                     responseJson.addProperty("success", random.nextBoolean());
                     out.println(responseJson.toString());
                     break;
                 case "choose":
-                    responseJson.addProperty("chosen", random.nextInt(requestJson.get("less_then").getAsInt()));
+                    responseJson.addProperty("chosen", random.nextInt(requestJson.get("less_than").getAsInt()));
                     out.println(responseJson.toString());
                     break;
                 case "lets_party":

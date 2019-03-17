@@ -1,5 +1,7 @@
 package sticks.server;
 
+import sticks.server.models.ActivePlayer;
+
 import java.util.ArrayList;
 
 public class PlayerUtils {

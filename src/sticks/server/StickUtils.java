@@ -1,7 +1,8 @@
 package sticks.server;
 
+import sticks.server.models.Stick;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 

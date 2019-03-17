@@ -1,4 +1,4 @@
-package sticks.server;
+package sticks.server.models;
 
 import java.util.concurrent.atomic.AtomicInteger;
 

@@ -1,4 +1,4 @@
-package sticks.server;
+package sticks.server.models;
 
 public class Stick {
     private boolean success;
