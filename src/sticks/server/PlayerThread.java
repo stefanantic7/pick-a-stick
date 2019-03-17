@@ -68,7 +68,7 @@ public class PlayerThread extends Thread{
     public void run() {
         //newParty
 
-        while(Croupier.round_counter.get() < Croupier.ROUNDS) {
+        while(this.croupier.getRoundCounter().get() < Croupier.ROUNDS) {
 
             System.out.println("[Server]: "+uuid+" has entered in new round");
             //Cekaj da se sve pripremi za ovu partiju
@@ -122,7 +122,7 @@ public class PlayerThread extends Thread{
             if(this.uuid.equals(currentPlayerUuid) && !StickUtils.getLastPickedStick().isSuccess()) {
                 System.out.println("[Server]: "+this.uuid+" chose bad stick");
                 //-1 jer ce se tek kasnije inkrementirati brojac ( u drugom threadu koji resetuje sve potrebno za novu rundu )
-                if(Croupier.round_counter.get() < Croupier.ROUNDS -1) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
+                if(this.croupier.getRoundCounter().get() < Croupier.ROUNDS -1) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
                     System.out.println("[Server]: New party has started");
                 }
                 //New party
@@ -159,9 +159,17 @@ public class PlayerThread extends Thread{
 
         }
 
+        if(PlayerUtils.getTheBestPlayer().getUuid().equals(this.uuid)) {
+            System.out.println("[Socket]: The best player is: "+this.uuid);
+            JsonObject request = new JsonObject();
+            request.addProperty("action", "lets_party");
+            out.println(request.toString());
+        }
+
         JsonObject request = new JsonObject();
         request.addProperty("action", "quit");
         out.println(request.toString());
+
         try {
             in.close();
             out.close();
@@ -170,5 +178,26 @@ public class PlayerThread extends Thread{
             e.printStackTrace();
         }
 
+        //Pobednicki thread ce se iskoristiti za reset igre, tako da nova igra moze poceti ponovo
+        if(this.uuid.equals(PlayerUtils.getTheBestPlayer().getUuid())) {
+            //Izbacimo preostale
+            PlayerUtils.removeAll();
+            //promesamo
+            StickUtils.reset();
+
+            //Resetujemo round counter
+            this.croupier.getRoundCounter().set(0);
+            //Resetujemo index igraca koji je sledeci na redu
+            this.croupier.getCurrentPlayerIndex().set(0);
+
+            //Resetujemo latcheve
+            this.croupier.resetAllGuessLatch();
+            this.croupier.resetStickChosenLatch();
+            this.croupier.getNewPartyLatch().countDown();
+
+            System.out.println();
+            System.out.println();
+            System.out.println("[Server]: Waiting for new players...");
+        }
     }
 }

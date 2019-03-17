@@ -27,6 +27,33 @@ public class PlayerUtils {
         return findByUuid(uuid).incrementPoints();
     }
 
+    public static synchronized void removeAll() {
+        table = new ArrayList<>();
+    }
+
+    public static synchronized boolean exists(String uuid) {
+        boolean exists = false;
+        for (ActivePlayer player:table) {
+            if(player.getUuid().equals(uuid)) {
+                exists = true;
+                break;
+            }
+        }
+        return exists;
+    }
+
+    public static synchronized ActivePlayer getTheBestPlayer() {
+        ActivePlayer theBestPlayer = null;
+        if(table.size()>0) {
+            theBestPlayer = table.get(0);
+            for (ActivePlayer player : table) {
+                if(player.getPoints()>theBestPlayer.getPoints()) {
+                    theBestPlayer = player;
+                }
+            }
+        }
+        return theBestPlayer;
+    }
     private static ActivePlayer findByUuid(String uuid) {
         ActivePlayer player = null;
         for (ActivePlayer activePlayer : table) {

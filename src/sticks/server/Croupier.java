@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
@@ -16,9 +17,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Croupier {
     public static final int TCP_PORT = 9000;
     public static final int MAX_PLAYER_COUNT = 3;
-    public static int ROUNDS = 9;
+    public static int ROUNDS = 5;
 
-    public static final AtomicInteger round_counter = new AtomicInteger(0);
+    private static Croupier instance = null;
+
+    private AtomicInteger roundCounter = new AtomicInteger(0);
 
     private AtomicInteger currentPlayerIndex = new AtomicInteger(0);
     private AtomicInteger lastChosenStickIndex = new AtomicInteger(0);
@@ -28,8 +31,14 @@ public class Croupier {
     private CountDownLatch stickChosenLatch;
     private CountDownLatch newPartyLatch;
     private CyclicBarrier nextRoundBarrier;
-    public Croupier() {
+    private ServerSocket serverSocket;
 
+
+    private Croupier() {
+        start();
+    }
+
+    private void start() {
         this.allReadyBarrier = new CyclicBarrier(MAX_PLAYER_COUNT);
         this.allGuessLatch = new CountDownLatch(MAX_PLAYER_COUNT-1);
         this.stickChosenLatch = new CountDownLatch(1);
@@ -37,11 +46,10 @@ public class Croupier {
         this.nextRoundBarrier = new CyclicBarrier(MAX_PLAYER_COUNT, ()->{
             //Prelazi se u sledecu rundu kad svi sve zavrse
 
-            int roundNumber = round_counter.incrementAndGet();
-            if(Croupier.round_counter.get() < Croupier.ROUNDS) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
+            int roundNumber = getRoundCounter().incrementAndGet();
+            if(getRoundCounter().get() < Croupier.ROUNDS) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
                 System.out.println("[Server]: Round number: " + (roundNumber+1)); // Count from zero
             }
-            //ispisi rezultat
 
             if(this.getCurrentPlayerIndex().incrementAndGet() == MAX_PLAYER_COUNT) {
                 this.getCurrentPlayerIndex().set(0);
@@ -49,20 +57,21 @@ public class Croupier {
 
             resetAllGuessLatch();
             resetStickChosenLatch();
+
         });
 
         StickUtils.reset();
 
-        this.getNewPartyLatch().countDown(); //starts new party
+        this.getNewPartyLatch().countDown(); //starts a new party
 
         System.out.println("[Server]: Croupier is running...");
         System.out.println("[Server]: Round number: 1");
 
+        Socket socket = null;
         try {
-            @SuppressWarnings("resource")
-            ServerSocket serverSocket = new ServerSocket(TCP_PORT);
+            serverSocket = new ServerSocket(TCP_PORT);
             while (true) {
-                Socket socket = serverSocket.accept();
+                socket = serverSocket.accept();
                 BufferedReader in = new BufferedReader(
                         new InputStreamReader(socket.getInputStream()));
 
@@ -86,9 +95,20 @@ public class Croupier {
 
 
             }
-        } catch (Exception ex) {
+        } catch (SocketException ex) {
+            try {
+                if(socket != null) socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("[Server]: close socket"); //Server socket will be automatically closed when game is finished.
+        } catch (IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    public AtomicInteger getRoundCounter() {
+        return roundCounter;
     }
 
     public CyclicBarrier getNextRoundBarrier() {
@@ -131,8 +151,19 @@ public class Croupier {
         return lastChosenStickIndex;
     }
 
+    public static Croupier getInstance() {
+        if (instance == null) {
+            synchronized (Croupier.class) {
+                if (instance == null) {
+                    instance = new Croupier();
+                }
+            }
+        }
+        return instance;
+    }
+
     public static void main(String[] args) {
-        new Croupier();
+        Croupier.getInstance();
     }
 
 }

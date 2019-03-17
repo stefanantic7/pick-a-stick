@@ -80,6 +80,9 @@ public class Player {
                     responseJson.addProperty("chosen", random.nextInt(requestJson.get("less_then").getAsInt()));
                     out.println(responseJson.toString());
                     break;
+                case "lets_party":
+                    System.out.println("[Client]: Partijam");
+                    break;
                 default:
                     return;
             }
