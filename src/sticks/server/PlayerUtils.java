@@ -1,32 +1,40 @@
 package sticks.server;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class PlayerUtils {
-    private static HashMap<String, AtomicInteger> clients = new HashMap<>();
-    private static ArrayList<String> table = new ArrayList<>();
+    private static ArrayList<ActivePlayer> table = new ArrayList<>();
 
     public static synchronized void addClient(String uuid) {
-        clients.put(uuid, new AtomicInteger(0));
-        table.add(uuid);
+        if(findByUuid(uuid) == null) {
+            table.add(new ActivePlayer(uuid, 0));
+        }
     }
 
     public static synchronized void removeClient(String uuid) {
-        clients.remove(uuid);
-        table.remove(uuid);
-    }
-
-    public static HashMap<String, AtomicInteger> getPlayers() {
-        return clients;
+        table.remove(findByUuid(uuid));
     }
 
     public static String getByIndex(int index) {
-        return table.get(index);
+        return table.get(index).getUuid();
+    }
+
+    public static int countActivePlayers() {
+        return table.size();
     }
 
     public static synchronized int incrementPointsTo(String uuid) {
-        return clients.get(uuid).incrementAndGet();
+        return findByUuid(uuid).incrementPoints();
+    }
+
+    private static ActivePlayer findByUuid(String uuid) {
+        ActivePlayer player = null;
+        for (ActivePlayer activePlayer : table) {
+            if(activePlayer.getUuid().equals(uuid)) {
+                player = activePlayer;
+                break;
+            }
+        }
+        return player;
     }
 }

@@ -15,6 +15,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+//Testiraj poene
 //Fiksuj ovo sa stapicima, nakon izvlacenja, gubi se stapic
 //Napravi klasu ActivePlayer gde ces da cuvas sve o tom igracu
 //shodno tome, apdejtuj PlayerUtils
@@ -23,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 public class Croupier {
     public static final int TCP_PORT = 9000;
     public static final int MAX_PLAYER_COUNT = 3;
-    public static int rounds = 15;
+    public static int rounds = 3;
     public static final AtomicInteger round_counter = new AtomicInteger(0);
 
     private AtomicInteger currentPlayerIndex = new AtomicInteger(0);
@@ -47,10 +48,17 @@ public class Croupier {
             while(true) {
                 if(this.nextRoundBarrier.getNumberWaiting()==MAX_PLAYER_COUNT) {
                     round_counter.incrementAndGet();
+
                     //ispisi rezultat
+
                     if(this.getCurrentPlayerIndex().incrementAndGet() == MAX_PLAYER_COUNT) {
                         this.getCurrentPlayerIndex().set(0);
                     }
+
+                    resetAllGuessLatch();
+                    resetStickChosenLatch();
+
+
                     try {
                         this.nextRoundBarrier.await(); // Notify all to continue
                     } catch (InterruptedException | BrokenBarrierException e) {
@@ -76,7 +84,7 @@ public class Croupier {
                         socket.getOutputStream())), true);
 
                 JsonObject response = new JsonObject();
-                if(PlayerUtils.getPlayers().size() < MAX_PLAYER_COUNT) {
+                if(PlayerUtils.countActivePlayers() < MAX_PLAYER_COUNT) {
                     String uuid = UUID.randomUUID().toString();
                     PlayerUtils.addClient(uuid);
 

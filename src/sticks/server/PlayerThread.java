@@ -112,9 +112,9 @@ public class PlayerThread extends Thread{
             //Daj poene onima koji su pogadjali i koji su pogodili
             if(!this.uuid.equals(currentPlayerUuid)
                     && this.lastSuccessGuess==this.croupier.getSticks().get(this.croupier.getLastChosenStickIndex().get()).isSuccess()) {
-                PlayerUtils.incrementPointsTo(uuid);
+                int points = PlayerUtils.incrementPointsTo(uuid);
+                System.out.println("[Server]: "+this.uuid+" has "+points+" points");
             }
-
 
             //Ako je izvukao los
             if(this.uuid.equals(currentPlayerUuid) && !this.croupier.getSticks().get(this.croupier.getLastChosenStickIndex().get()).isSuccess()) {
