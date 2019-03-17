@@ -34,35 +34,22 @@ public class Croupier {
         this.allGuessLatch = new CountDownLatch(MAX_PLAYER_COUNT-1);
         this.stickChosenLatch = new CountDownLatch(1);
         this.newPartyLatch = new CountDownLatch(1);
-        this.nextRoundBarrier = new CyclicBarrier(MAX_PLAYER_COUNT+1);//+one for another thread
+        this.nextRoundBarrier = new CyclicBarrier(MAX_PLAYER_COUNT, ()->{
+            //Prelazi se u sledecu rundu kad svi sve zavrse
 
-        //Thread for controlling if should go to next round
-        new Thread(()-> {
-            while(true) {
-                //Prelazi se u sledecu rundu kad svi sve zavrse
-                if(this.nextRoundBarrier.getNumberWaiting()==MAX_PLAYER_COUNT) {
-                    int roundNumber = round_counter.incrementAndGet();
-                    if(Croupier.round_counter.get() < Croupier.ROUNDS) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
-                        System.out.println("[Server]: Round number: " + (roundNumber+1)); // Count from zero
-                    }
-                    //ispisi rezultat
-
-                    if(this.getCurrentPlayerIndex().incrementAndGet() == MAX_PLAYER_COUNT) {
-                        this.getCurrentPlayerIndex().set(0);
-                    }
-
-                    resetAllGuessLatch();
-                    resetStickChosenLatch();
-
-
-                    try {
-                        this.nextRoundBarrier.await(); // Notify all to continue
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
-                    }
-                }
+            int roundNumber = round_counter.incrementAndGet();
+            if(Croupier.round_counter.get() < Croupier.ROUNDS) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
+                System.out.println("[Server]: Round number: " + (roundNumber+1)); // Count from zero
             }
-        }).start();
+            //ispisi rezultat
+
+            if(this.getCurrentPlayerIndex().incrementAndGet() == MAX_PLAYER_COUNT) {
+                this.getCurrentPlayerIndex().set(0);
+            }
+
+            resetAllGuessLatch();
+            resetStickChosenLatch();
+        });
 
         StickUtils.reset();
 
