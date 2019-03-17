@@ -5,26 +5,19 @@ import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
-//Testiraj poene
-//Fiksuj ovo sa stapicima, nakon izvlacenja, gubi se stapic
-//Napravi klasu ActivePlayer gde ces da cuvas sve o tom igracu
-//shodno tome, apdejtuj PlayerUtils
-//Daj mu po logu da znamo ko je kakav stapic izvukao
 //zavrsi igru kad se sve zavrsi (pobi sve)
+//Posalji pobedniku poruku
 public class Croupier {
     public static final int TCP_PORT = 9000;
-    public static final int MAX_PLAYER_COUNT = 6;
+    public static final int MAX_PLAYER_COUNT = 3;
     public static int ROUNDS = 9;
+
     public static final AtomicInteger round_counter = new AtomicInteger(0);
 
     private AtomicInteger currentPlayerIndex = new AtomicInteger(0);
@@ -46,9 +39,12 @@ public class Croupier {
         //Thread for controlling if should go to next round
         new Thread(()-> {
             while(true) {
+                //Prelazi se u sledecu rundu kad svi sve zavrse
                 if(this.nextRoundBarrier.getNumberWaiting()==MAX_PLAYER_COUNT) {
-                    round_counter.incrementAndGet();
-
+                    int roundNumber = round_counter.incrementAndGet();
+                    if(Croupier.round_counter.get() < Croupier.ROUNDS) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
+                        System.out.println("[Server]: Round number: " + (roundNumber+1)); // Count from zero
+                    }
                     //ispisi rezultat
 
                     if(this.getCurrentPlayerIndex().incrementAndGet() == MAX_PLAYER_COUNT) {
@@ -73,6 +69,8 @@ public class Croupier {
         this.getNewPartyLatch().countDown(); //starts new party
 
         System.out.println("[Server]: Croupier is running...");
+        System.out.println("[Server]: Round number: 1");
+
         try {
             @SuppressWarnings("resource")
             ServerSocket serverSocket = new ServerSocket(TCP_PORT);

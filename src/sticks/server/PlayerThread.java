@@ -56,7 +56,8 @@ public class PlayerThread extends Thread{
             System.out.println("[Client] "+uuid+": "+response);
             JsonObject responseJson = new JsonParser().parse(response).getAsJsonObject();
             this.croupier.getLastChosenStickIndex().set(responseJson.get("chosen").getAsInt());
-            StickUtils.pick(responseJson.get("chosen").getAsInt());
+            Stick stick = StickUtils.pick(responseJson.get("chosen").getAsInt());
+            System.out.println("[Server]: Client "+uuid+" choose stick with id: "+stick.getId());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -120,6 +121,7 @@ public class PlayerThread extends Thread{
             //Ako je izvukao los
             if(this.uuid.equals(currentPlayerUuid) && !StickUtils.getLastPickedStick().isSuccess()) {
                 System.out.println("[Server]: "+this.uuid+" chose bad stick");
+                //-1 jer ce se tek kasnije inkrementirati brojac ( u drugom threadu koji resetuje sve potrebno za novu rundu )
                 if(Croupier.round_counter.get() < Croupier.ROUNDS -1) { //nece poceti novu partiju ako je poslednja runda (M-ta runda)
                     System.out.println("[Server]: New party has started");
                 }
